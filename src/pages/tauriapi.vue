@@ -124,7 +124,7 @@
                     </el-menu-item>
                     <el-menu-item index="100">
                         <el-icon><ArrowLeft /></el-icon>
-                        <span @click="goBack">{{ t('backToHome') }}</span>
+                        <span>{{ t('backToHome') }}</span>
                     </el-menu-item>
                 </el-menu>
             </el-scrollbar>
@@ -133,7 +133,11 @@
         <el-container>
             <!-- header -->
             <el-header v-if="menuIndex !== '4'" class="headerBox">
-                <div v-if="menuIndex !== '4'" class="backBtn" @click="goBack">
+                <div
+                    v-if="menuIndex !== '4'"
+                    class="backBtn"
+                    @click="router.back()"
+                >
                     <el-icon><ArrowLeft /></el-icon>
                     <span>{{ t('back') }}</span>
                 </div>
@@ -1028,6 +1032,23 @@
                         </p>
                     </div>
                 </div>
+                <!-- api/listenData -->
+                <div v-else-if="menuIndex === '3-3'" class="cardContent">
+                    <h1 class="cardTitle">listenData</h1>
+                    <p>Listen web data</p>
+                    <div class="cardBox">
+                        <el-tooltip content="open debug" placement="bottom">
+                            <el-button @click="debugHandler('open')">
+                                开启调试
+                            </el-button>
+                        </el-tooltip>
+                        <el-tooltip content="close debug" placement="bottom">
+                            <el-button @click="debugHandler('close')">
+                                关闭调试
+                            </el-button>
+                        </el-tooltip>
+                    </div>
+                </div>
                 <!-- api/template -->
                 <div v-else-if="menuIndex === '1-111'" class="cardContent">
                     <h1 class="cardTitle">menu</h1>
@@ -1257,7 +1278,7 @@ const currentMonth = now.getMonth() + 1
 const githubBilling = ref({})
 const discountAmount = ref(0)
 const githubApiLimit = ref({
-    limit: 0,
+    limit: 5000,
     remaining: 0,
     reset: 0,
     used: 0,
@@ -1306,19 +1327,19 @@ const handleMenu = (index: string) => {
         menuIndex.value = index
         console.log('isTauri')
     } else {
-        if (index === '0-1') {
-            menuIndex.value = index
-            store.token && getGithubBilling()
-        } else if (index === '4') {
+        if (index === '4') {
             router.push('/about')
         } else {
             oneMessage.error(t('apiLimitClient'))
         }
     }
-}
-
-const goBack = () => {
-    router.back()
+    // ppclient and web
+    if (index === '0-1') {
+        menuIndex.value = index
+        store.token && getGithubBilling()
+    } else if (index === '100') {
+        router.push('/')
+    }
 }
 
 // defaultWindowIcon
@@ -1383,7 +1404,7 @@ const showApi = async () => {
     await show()
 }
 
-// event:监听事件
+// event:listen event
 let unlisten: any = null
 const listenEvent = async () => {
     unlisten = await listen('my-event', (event: any) => {
@@ -1393,18 +1414,18 @@ const listenEvent = async () => {
     textarea.value = 'event:' + t('listenEvent')
 }
 
-// event:发送事件
+// event:send event
 const sendEvent = async () => {
     await emit('my-event', { message: 'Hello, PakePlus!' })
 }
 
-// event:取消监听
+// event:unlisten event
 const unlistenEvent = async () => {
     unlisten && unlisten()
     textarea.value = 'event:' + t('unlistenEvent')
 }
 
-// window:窗口
+// window:open window
 const openWindow = async () => {
     console.log('window')
 }
@@ -1508,7 +1529,7 @@ const startPayTime = () => {
 
 // get pay code
 const getPayJsCode = async (payMathod: string = 'weixin') => {
-    // 请输入支付金额(单位:元)
+    // input pay amount(unit:yuan)
     payType.value = payMathod
     payMethod.value = 'payjs'
     let money = 10
@@ -1728,7 +1749,7 @@ const compressFile = async () => {
     }
 }
 
-// 解压文件
+// decompress file
 const decompressFile = async () => {
     console.log('decompressFile')
     const selected = await openSelect(false, [])
@@ -1986,6 +2007,16 @@ const downFile = async (selPath: boolean = true) => {
     })
 }
 
+// open vconsole
+let vConsole: any = null
+const debugHandler = (type: string = 'open') => {
+    if (type === 'open') {
+        vConsole = new window.VConsole()
+    } else {
+        vConsole.destroy()
+    }
+}
+
 listen('download_progress', (event: any) => {
     console.log(`downloading fileId--- ${event.payload.fileId}`)
     console.log(`downloading downloaded--- ${event.payload.downloaded}`)
@@ -2005,6 +2036,8 @@ onMounted(() => {
     if (about) {
         defaultMenu.value = '4'
         menuIndex.value = '4'
+    } else {
+        handleMenu(menuIndex.value)
     }
 })
 </script>
